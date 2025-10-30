@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>paperHUB - AI-Powered PDF & Learning Tools</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+<style>
+  body { font-family: "Inter", sans-serif; background: linear-gradient(135deg, #f9f9ff, #eaeaff); margin:0; }
+  .page { min-height:100vh; padding-top:4rem; }
+  .hidden { display:none; }
+  #drop-preview { opacity:0; transform:scale(1.02); transition: opacity 0.6s ease, transform 0.6s ease; }
+  #drop-preview.active { opacity:0.35; transform:scale(1); }
+  #file-list { display:grid; grid-template-columns:repeat(auto-fit, minmax(150px,1fr)); gap:1.25rem; margin-top:1rem; }
+  #progress-overlay {
+    position: fixed; inset: 0; background: rgba(255,255,255,0.8); display: flex; flex-direction: column; justify-content: center; align-items: center;
+    z-index: 1000; display: none;
+  }
+</style>
+</head>
+<body>
+
+<!-- Progress Overlay -->
+<div id="progress-overlay">
+  <div class="bg-white shadow-lg rounded-2xl p-8 flex flex-col items-center">
+    <i id="progress-icon" class="fas fa-spinner fa-spin text-4xl text-purple-600 mb-4"></i>
+    <p id="progress-title" class="text-lg font-semibold mb-3 text-gray-700">Processing, please wait...</p>
+    <div class="w-64 bg-gray-200 rounded-full h-3 mb-2">
+      <div id="progress-bar" class="bg-purple-600 h-3 rounded-full transition-all" style="width:0%;"></div>
+    </div>
+    <p id="progress-text" class="text-sm text-gray-600">0%</p>
+    <button id="progress-cancel" class="mt-4 text-sm text-red-600 hidden">Cancel</button>
+  </div>
+</div>
+
+<nav class="bg-white shadow-lg fixed w-full z-50">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="flex justify-between h-16">
+      <div class="flex items-center">
+        <a href="#" class="text-2xl font-bold text-purple-600" onclick="showPage('home')">paperHUB</a>
+      </div>
+      <div class="hidden md:flex items-center space-x-6">
+        <a href="#" onclick="showPage('home')" class="text-gray-700 hover:text-purple-600 transition">Home</a>
+        <a href="#" onclick="showPage('features')" class="text-gray-700 hover:text-purple-600 transition">Features</a>
+        <a href="#" onclick="showPage('upload')" class="text-gray-700 hover:text-purple-600 transition">Upload</a>
+        <a href="#" onclick="showPage('myFiles')" class="text-gray-700 hover:text-purple-600 transition">My Files</a>
+        <a href="#" onclick="showPage('about')" class="text-gray-700 hover:text-purple-600 transition">About</a>
+      </div>
+      <div class="md:hidden flex items-center">
+        <button id="mobile-menu-btn" class="text-gray-700" aria-label="Toggle menu"><i class="fas fa-bars text-xl"></i></button>
+      </div>
+    </div>
+  </div>
+  <div id="mobile-menu" class="hidden md:hidden bg-white border-t">
+    <div class="px-2 pt-2 pb-3 space-y-1">
+      <a href="#" onclick="showPage('home')" class="block px-3 py-2 text-gray-700 hover:text-purple-600">Home</a>
+      <a href="#" onclick="showPage('features')" class="block px-3 py-2 text-gray-700 hover:text-purple-600">Features</a>
+      <a href="#" onclick="showPage('upload')" class="block px-3 py-2 text-gray-700 hover:text-purple-600">Upload</a>
+      <a href="#" onclick="showPage('myFiles')" class="block px-3 py-2 text-gray-700 hover:text-purple-600">My Files</a>
+      <a href="#" onclick="showPage('about')" class="block px-3 py-2 text-gray-700 hover:text-purple-600">About</a>
+    </div>
+  </div>
+</nav>
+
+<div id="home" class="page">
+  <section class="text-white pt-20 pb-16 text-center" style="background:linear-gradient(135deg, #667eea 0%, #764ba2 100%)">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <h1 class="text-5xl md:text-6xl font-bold mb-6">Welcome to paperHUB</h1>
+      <p class="text-xl md:text-2xl mb-8 max-w-3xl mx-auto">Upload PDFs or images, process with AI or PDF tools, all in one place.</p>
+      <button onclick="showPage('upload')" class="bg-white text-purple-600 px-8 py-4 rounded-lg font-semibold text-lg hover:bg-gray-100 transition">Get Started</button>
+    </div>
+  </section>
+</div>
+
+<div id="features" class="page hidden pt-20">
+  <section class="max-w-7xl mx-auto px-4 py-16">
+    <h2 class="text-4xl font-bold text-center mb-12 text-gray-800">Features</h2>
+    <div class="grid md:grid-cols-3 gap-8">
+      <div class="p-6 bg-white rounded-lg shadow-lg text-center">
+        <i class="fas fa-file-pdf text-4xl text-purple-600 mb-4"></i>
+        <h3 class="text-xl font-bold mb-2">PDF Tools</h3>
+        <p>Merge, compress, convert PDFs, and export pages as images.</p>
+      </div>
+      <div class="p-6 bg-white rounded-lg shadow-lg text-center">
+        <i class="fas fa-robot text-4xl text-purple-600 mb-4"></i>
+        <h3 class="text-xl font-bold mb-2">AI Tools</h3>
+        <p>Summarize, generate quizzes, and create mind maps.</p>
+      </div>
+      <div class="p-6 bg-white rounded-lg shadow-lg text-center">
+        <i class="fas fa-cloud-upload-alt text-4xl text-purple-600 mb-4"></i>
+        <h3 class="text-xl font-bold mb-2">Upload</h3>
+        <p>Upload PDFs and images for instant processing.</p>
+      </div>
+    </div>
+  </section>
+</div>
+
+<div id="upload" class="page hidden pt-20">
+  <section class="max-w-4xl mx-auto px-4 py-16 text-center">
+    <h2 class="text-3xl font-bold mb-6">Upload Files</h2>
+    <div id="drop-zone" class="relative w-full mx-auto flex flex-col items-center justify-center border-4 border-dashed border-gray-300 rounded-2xl bg-white p-12 hover:border-purple-400 transition cursor-pointer shadow-sm hover:shadow-md overflow-hidden">
+      <div id="drop-preview" class="absolute inset-0 rounded-2xl bg-cover bg-center blur-md hidden"></div>
+      <div class="relative z-10 flex flex-col items-center justify-center text-center">
+        <i class="fas fa-cloud-upload-alt text-6xl text-purple-500 mb-4"></i>
+        <p class="text-xl font-medium text-gray-700 mb-2">Drag & Drop to Upload</p>
+        <p class="text-gray-500 mb-4">or</p>
+        <label for="file-upload" class="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded-lg cursor-pointer font-semibold transition">Browse File</label>
+        <input type="file" id="file-upload" multiple accept=".pdf,image/*" class="hidden">
+      </div>
+    </div>
+    <div id="file-list"></div>
+
+    <h3 class="text-2xl font-semibold mb-4 text-gray-800 mt-8">PDF Tools</h3>
+    <div class="flex flex-wrap justify-center gap-4 mb-6">
+      <button class="flex flex-col items-center justify-center bg-purple-600 hover:bg-purple-700 text-white p-4 rounded-xl shadow-md transition hover:shadow-lg" onclick="pdfTool('merge')">
+        <i class="fas fa-object-group text-3xl mb-2"></i><span class="text-sm font-semibold">Merge</span>
+      </button>
+      <button class="flex flex-col items-center justify-center bg-purple-600 hover:bg-purple-700 text-white p-4 rounded-xl shadow-md transition hover:shadow-lg" onclick="pdfTool('compress')">
+        <i class="fas fa-compress text-3xl mb-2"></i><span class="text-sm font-semibold">Compress</span>
+      </button>
+      <button class="flex flex-col items-center justify-center bg-purple-600 hover:bg-purple-700 text-white p-4 rounded-xl shadow-md transition hover:shadow-lg" onclick="pdfTool('to-image')">
+        <i class="fas fa-image text-3xl mb-2"></i><span class="text-sm font-semibold">To Image</span>
+      </button>
+    </div>
+
+    <h3 class="text-2xl font-semibold mb-4 text-gray-800">AI Tools</h3>
+    <div class="flex flex-wrap justify-center gap-4 mb-6">
+      <button class="flex flex-col items-center justify-center bg-purple-600 hover:bg-purple-700 text-white p-4 rounded-xl shadow-md transition hover:shadow-lg" onclick="aiTool('summarizer')">
+        <i class="fas fa-file-alt text-3xl mb-2"></i><span class="text-sm font-semibold">Summarizer</span>
+      </button>
+      <button class="flex flex-col items-center justify-center bg-purple-600 hover:bg-purple-700 text-white p-4 rounded-xl shadow-md transition hover:shadow-lg" onclick="aiTool('quiz-generator')">
+        <i class="fas fa-question-circle text-3xl mb-2"></i><span class="text-sm font-semibold">Quiz</span>
+      </button>
+      <button class="flex flex-col items-center justify-center bg-purple-600 hover:bg-purple-700 text-white p-4 rounded-xl shadow-md transition hover:shadow-lg" onclick="aiTool('mindmap')">
+        <i class="fas fa-brain text-3xl mb-2"></i><span class="text-sm font-semibold">Mind Map</span>
+      </button>
+    </div>
+  </section>
+</div>
+
+<div id="myFiles" class="page hidden pt-20">
+  <section class="max-w-5xl mx-auto px-4 py-16">
+    <h2 class="text-3xl font-bold mb-6 text-center">My Files</h2>
+    <div id="my-files-list" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6"></div>
+  </section>
+</div>
+
+<div id="about" class="page hidden pt-20">
+  <section class="py-20 bg-gray-50 max-w-7xl mx-auto px-4">
+    <h2 class="text-4xl font-bold text-center mb-12 text-gray-800">About paperHUB</h2>
+    <div class="grid md:grid-cols-2 gap-12 items-center">
+      <p class="text-gray-600 text-lg">paperHUB is your all-in-one platform for handling PDFs and images with AI tools and PDF utilities. Upload files and process them instantly.</p>
+      <img src="https://via.placeholder.com/500x300" alt="paperHUB illustration" class="rounded-lg shadow-lg">
+    </div>
+  </section>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.379/pdf.min.mjs" type="module"></script>
+
+<script type="module">
+  import * as pdfjsLib from "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.379/pdf.min.mjs";
+  window.pdfjsLib = pdfjsLib;
+  pdfjsLib.GlobalWorkerOptions.workerSrc =
+    "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.379/pdf.worker.min.mjs";
+</script>
+
+<script>
+  const API_BASE = (window.location.port === '8080') ? '' : 'http://localhost:8080';
+
+  function showPage(id){ document.querySelectorAll('.page').forEach(p=>p.classList.add('hidden')); document.getElementById(id).classList.remove('hidden'); }
+  showPage('home');
+
+  const mobileMenuBtn=document.getElementById('mobile-menu-btn');
+  const mobileMenu=document.getElementById('mobile-menu');
+  mobileMenuBtn.addEventListener('click',()=>mobileMenu.classList.toggle('hidden'));
+
+  let uploadedFiles=[],generatedFiles=[];
+  const dropZone=document.getElementById('drop-zone');
+  const dropPreview=document.getElementById('drop-preview');
+  const fileInput=document.getElementById('file-upload');
+  const fileList=document.getElementById('file-list');
+
+  dropZone.addEventListener('dragover',e=>{e.preventDefault();dropZone.classList.add('border-purple-400','bg-purple-50');});
+  dropZone.addEventListener('dragleave',()=>dropZone.classList.remove('border-purple-400','bg-purple-50'));
+  dropZone.addEventListener('drop',e=>{e.preventDefault();dropZone.classList.remove('border-purple-400','bg-purple-50');uploadedFiles.push(...Array.from(e.dataTransfer.files));updateDropPreview();renderFileList();});
+  fileInput.addEventListener('change',e=>{uploadedFiles.push(...Array.from(e.target.files));updateDropPreview();renderFileList();});
+
+  function updateDropPreview(){
+    if(uploadedFiles.length===1){
+      const file=uploadedFiles[0];
+      if(file.type.startsWith('image/')){ dropPreview.style.backgroundImage=`url('${URL.createObjectURL(file)}')`; dropPreview.classList.remove('hidden'); setTimeout(()=>dropPreview.classList.add('active'),50); }
+      else if(file.type==='application/pdf'){ dropPreview.style.backgroundImage="url('https://cdn-icons-png.flaticon.com/512/337/337946.png')"; dropPreview.classList.remove('hidden'); setTimeout(()=>dropPreview.classList.add('active'),50); }
+      else { dropPreview.classList.remove('active'); dropPreview.classList.add('hidden'); }
+    } else { dropPreview.classList.remove('active'); dropPreview.classList.add('hidden'); }
+  }
+
+  function renderFileList(){
+    fileList.innerHTML="";
+    uploadedFiles.forEach((file,index)=>{
+      const card=document.createElement('div'); card.className="relative bg-white rounded-xl shadow-md p-4 flex flex-col items-center justify-center hover:shadow-lg transition";
+      const removeBtn=document.createElement('button'); removeBtn.innerHTML='<i class="fas fa-times"></i>'; removeBtn.className="absolute top-2 right-2 text-gray-500 hover:text-red-600";
+      removeBtn.onclick=()=>{ uploadedFiles.splice(index,1); updateDropPreview(); renderFileList(); };
+      card.appendChild(removeBtn);
+      if(file.type.startsWith('image/')){ const img=document.createElement('img'); img.src=URL.createObjectURL(file); img.className="w-24 h-24 object-cover rounded mb-2"; card.appendChild(img); }
+      else if(file.type==='application/pdf'){ const icon=document.createElement('i'); icon.className="fas fa-file-pdf text-red-500 text-5xl mb-2"; card.appendChild(icon); }
+      else { const icon=document.createElement('i'); icon.className="fas fa-file text-gray-500 text-5xl mb-2"; card.appendChild(icon); }
+      const name=document.createElement('p'); name.textContent=file.name.length>20?file.name.slice(0,17)+'...':file.name; name.className="text-sm text-gray-700 text-center break-all"; card.appendChild(name);
+      fileList.appendChild(card);
+    });
+  }
+
+  async function generatePdfThumbnail(file){
+    const arrayBuffer=await file.arrayBuffer(); const pdf=await pdfjsLib.getDocument({data: arrayBuffer}).promise;
+    const page=await pdf.getPage(1); const viewport=page.getViewport({scale:1}); const scale=150/Math.max(viewport.width, viewport.height);
+    const canvas=document.createElement('canvas'); canvas.width=viewport.width*scale; canvas.height=viewport.height*scale;
+    await page.render({canvasContext: canvas.getContext('2d'), viewport: page.getViewport({scale})}).promise; return canvas.toDataURL();
+  }
+
+  // Progress overlay helpers
+  const progressOverlay = document.getElementById('progress-overlay');
+  const progressBar = document.getElementById('progress-bar');
+  const progressText = document.getElementById('progress-text');
+  const progressTitle = document.getElementById('progress-title');
+  const progressIcon = document.getElementById('progress-icon');
+  const progressCancelBtn = document.getElementById('progress-cancel');
+  let progressInterval = null;
+  let currentXHR = null;
+
+  function showProgressOverlay(title = 'Processing, please wait...', showCancel = false){
+    progressTitle.textContent = title;
+    progressText.textContent = '0%';
+    progressBar.style.width = '0%';
+    progressIcon.className = 'fas fa-spinner fa-spin text-4xl text-purple-600 mb-4';
+    progressCancelBtn.style.display = showCancel ? 'inline-block' : 'none';
+    progressOverlay.style.display = 'flex';
+  }
+  function setProgress(percent, text){
+    const p = Math.max(0, Math.min(100, Math.round(percent)));
+    progressBar.style.width = p + '%';
+    progressText.textContent = (text || (p + '%'));
+  }
+  function hideProgressOverlay(){
+    progressOverlay.style.display = 'none';
+    progressBar.style.width = '0%';
+    progressText.textContent = '0%';
+    if(progressInterval){ clearInterval(progressInterval); progressInterval = null; }
+    if(currentXHR){ try{ currentXHR.abort(); }catch(e){} currentXHR = null; }
+  }
+
+  function startIndeterminateProgress(start=10, end=85, ms=400){
+    // slowly increments until stopped; used while waiting server response
+    let val = start;
+    setProgress(val);
+    if(progressInterval) clearInterval(progressInterval);
+    progressInterval = setInterval(()=>{
+      val += Math.random()*3; // small jitter
+      if(val >= end) val = end - Math.random()*3;
+      setProgress(val);
+    }, ms);
+  }
+
+  // Upload using XMLHttpRequest to monitor progress
+  function uploadToServer(files){
+    return new Promise((resolve, reject) => {
+      if(!files || files.length === 0){ reject(new Error('No files to upload')); return; }
+      const fd = new FormData();
+      for (const f of files) fd.append('files', f);
+
+      showProgressOverlay('Uploading files...', true);
+      currentXHR = new XMLHttpRequest();
+      currentXHR.open('POST', `${API_BASE}/api/pdf/upload`, true);
+
+      currentXHR.upload.onprogress = function(e){
+        if(e.lengthComputable){
+          const pct = (e.loaded / e.total) * 100;
+          setProgress(pct, Math.round(pct) + '% uploaded');
+        }
+      };
+      currentXHR.onload = function(){
+        try{
+          const text = currentXHR.responseText;
+          const status = currentXHR.status;
+          if(status >= 200 && status < 300){
+            let j = null;
+            try{ j = JSON.parse(text); }catch(err){ throw new Error('Upload: Invalid JSON from server'); }
+            if(!j.success) throw new Error(j.message || 'Upload failed');
+            setProgress(100, '100%');
+            // small timeout so UI shows 100%
+            setTimeout(()=>{ hideProgressOverlay(); resolve(j.data); }, 350);
+          } else {
+            throw new Error(text || `${status} ${currentXHR.statusText}`);
+          }
+        }catch(err){
+          hideProgressOverlay();
+          reject(err);
+        } finally {
+          currentXHR = null;
+        }
+      };
+      currentXHR.onerror = function(){
+        hideProgressOverlay();
+        reject(new Error('Network error during upload'));
+        currentXHR = null;
+      };
+      progressCancelBtn.onclick = function(){
+        if(currentXHR){ currentXHR.abort(); hideProgressOverlay(); reject(new Error('Upload cancelled by user')); currentXHR = null; }
+      };
+      currentXHR.send(fd);
+    });
+  }
+
+  // helper to fetch JSON with indeterminate progress
+  async function fetchWithIndeterminateProgress(url, opts = {}, title = 'Processing...'){
+    showProgressOverlay(title, false);
+    startIndeterminateProgress();
+    try{
+      const res = await fetch(url, opts);
+      const text = await res.text();
+      if(!res.ok){
+        hideProgressOverlay();
+        throw new Error(text || `${res.status} ${res.statusText}`);
+      }
+      let j;
+      try{ j = JSON.parse(text); }catch(e){ hideProgressOverlay(); throw new Error(`Expected JSON but got:\n${text.slice(0,400)}`); }
+      // finish progress animation
+      setProgress(100, '100%');
+      await new Promise(r=>setTimeout(r,250));
+      hideProgressOverlay();
+      return j;
+    }catch(err){
+      hideProgressOverlay();
+      throw err;
+    }
+  }
+
+  async function pdfTool(action){
+    try{
+      if(uploadedFiles.length===0){ alert('Upload files first!'); return; }
+      // upload
+      const serverNames = await uploadToServer(uploadedFiles);
+
+      if(action==='merge'){
+        // merge may take time -> indeterminate progress while server processes
+        const j = await fetchWithIndeterminateProgress(`${API_BASE}/api/pdf/merge`, {
+          method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ filenames: serverNames })
+        }, 'Merging PDFs...');
+        if(!j.success) throw new Error(j.message || 'Merge failed');
+        const name = j.data.filename;
+        // download result blob (show progress overlay while fetching binary)
+        await fetchBinaryAndAddToGenerated(name, `Downloading merged PDF...`, 'application/pdf', 'PDF: merge');
+      }
+
+      if(action==='compress'){
+        const j = await fetchWithIndeterminateProgress(`${API_BASE}/api/pdf/compress`, {
+          method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ filename: serverNames[0] })
+        }, 'Compressing PDF...');
+        if(!j.success) throw new Error(j.message || 'Compress failed');
+        const name = j.data.filename;
+        await fetchBinaryAndAddToGenerated(name, `Downloading compressed PDF...`, 'application/pdf', 'PDF: compress');
+      }
+
+      if(action==='to-image'){
+        let fmt=(prompt('Image format? Type png or jpeg', 'png') || 'png').toLowerCase();
+        if(fmt!=='png' && fmt!=='jpeg') fmt='png';
+        const j = await fetchWithIndeterminateProgress(`${API_BASE}/api/pdf/to-image`, {
+          method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ filename: serverNames[0], format: fmt })
+        }, 'Converting PDF to images...');
+        if(!j.success) throw new Error(j.message || 'Conversion failed');
+        const name = j.data.filename;
+        // server returns zip => download as blob
+        await fetchBinaryAndAddToGenerated(name, `Downloading images (${fmt.toUpperCase()})...`, 'application/zip', `PDF: to-image (${fmt.toUpperCase()})`);
+      }
+
+      await updateMyFilesList(); showPage('myFiles');
+    }catch(e){ console.error(e); alert(e.message || e); }
+  }
+
+  // helper to download server file as blob and add to generatedFiles
+  async function fetchBinaryAndAddToGenerated(filename, titleText, mimeHint, toolLabel){
+    showProgressOverlay(titleText, false);
+    startIndeterminateProgress();
+    try{
+      const resp = await fetch(`${API_BASE}/api/download/${encodeURIComponent(filename)}`);
+      if(!resp.ok) throw new Error(`${resp.status} ${resp.statusText}`);
+      const blob = await resp.blob();
+      const f = new File([blob], filename, {type: blob.type || mimeHint});
+      generatedFiles.push({file: f, name: f.name, type: f.type, toolLabel: toolLabel});
+      setProgress(100, '100%');
+      await new Promise(r=>setTimeout(r,200));
+      hideProgressOverlay();
+    }catch(err){
+      hideProgressOverlay();
+      throw err;
+    }
+  }
+
+  async function aiTool(tool){
+    try{
+      if(uploadedFiles.length===0){ alert('Upload a PDF first!'); return; }
+      const [filename] = await uploadToServer(uploadedFiles);
+      const endpoint = (tool==='summarizer')?'summarize':(tool==='quiz-generator')?'quiz':'mindmap';
+      const j = await fetchWithIndeterminateProgress(`${API_BASE}/api/ai/${endpoint}`, {
+        method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ filename })
+      }, `Running AI: ${tool}...`);
+      if(!j.success) throw new Error(j.message);
+      const outName = filename.replace(/\.[^/.]+$/,'')+`_${tool}.txt`;
+      const blob = new Blob([j.data.result || ''], {type:'text/plain'});
+      const f = new File([blob], outName, {type:'text/plain'});
+      generatedFiles.push({file: f, name: f.name, type: f.type, toolLabel:`AI: ${tool}`});
+      await updateMyFilesList(); showPage('myFiles');
+    }catch(e){ console.error(e); alert(e.message || e); }
+  }
+
+  async function updateMyFilesList(){
+    const container=document.getElementById('my-files-list'); container.innerHTML='';
+    for(let i=0;i<generatedFiles.length;i++){
+      const o=generatedFiles[i];
+      const card=document.createElement('div');
+      card.className="relative bg-white rounded-xl shadow-md p-4 flex flex-col items-center justify-center hover:shadow-lg transition";
+
+      const label=document.createElement('span');
+      label.textContent=o.toolLabel;
+      label.className="absolute top-2 left-2 bg-purple-600 text-white text-xs font-semibold px-2 py-1 rounded-full shadow";
+      card.appendChild(label);
+
+      const prev=document.createElement('div');
+      prev.style.cssText="width:150px;height:150px;display:flex;align-items:center;justify-content:center;overflow:hidden;margin-bottom:8px;";
+      if(o.type && o.type.startsWith('image/')){
+        const img=document.createElement('img'); img.src=URL.createObjectURL(o.file); img.style.maxWidth='100%'; img.style.maxHeight='100%'; img.style.objectFit='contain'; prev.appendChild(img);
+      } else if(o.type==='application/pdf'){
+        const img=document.createElement('img');
+        // generate thumbnail asynchronously
+        (async ()=>{
+          try{
+            const thumb = await generatePdfThumbnail(o.file);
+            img.src = thumb;
+          }catch(e){
+            img.src = 'https://cdn-icons-png.flaticon.com/512/337/337946.png';
+          }
+        })();
+        img.style.maxWidth='100%'; img.style.maxHeight='100%'; img.style.objectFit='contain'; prev.appendChild(img);
+      } else {
+        const icon=document.createElement('i'); icon.className="fas fa-file text-gray-500 text-5xl"; prev.appendChild(icon);
+      }
+      card.appendChild(prev);
+
+      const name=document.createElement('p'); name.textContent=o.name.length>20?o.name.slice(0,17)+'...':o.name; name.className="text-sm text-gray-700 text-center mb-2 break-all"; name.title=o.name; card.appendChild(name);
+
+      const btns=document.createElement('div'); btns.className="flex space-x-2";
+      // Download button (explicit)
+      const download=document.createElement('button');
+      download.innerHTML='<i class="fas fa-download mr-2"></i>Download';
+      download.className="bg-blue-600 hover:bg-blue-700 px-3 py-1 rounded-md text-white text-sm flex items-center";
+      download.onclick=()=>{ downloadFile(o); };
+      btns.appendChild(download);
+
+      const edit=document.createElement('button');
+      edit.innerHTML='<i class="fas fa-edit"></i>';
+      edit.className="bg-yellow-300 hover:bg-yellow-400 px-3 py-1 rounded-md text-white";
+      edit.title = 'Rename';
+      edit.onclick=()=>{ const nn=prompt('Enter new file name:', o.name.replace(/\.[^/.]+$/,'')); if(nn){ const ext=o.name.split('.').pop(); o.name=nn+'.'+ext; o.file=new File([o.file], o.name, {type:o.type}); updateMyFilesList(); } };
+      btns.appendChild(edit);
+
+      const del=document.createElement('button');
+      del.innerHTML='<i class="fas fa-trash"></i>';
+      del.className="bg-red-500 hover:bg-red-600 px-3 py-1 rounded-md text-white";
+      del.title = 'Delete';
+      del.onclick=()=>{ if(confirm('Delete this generated file?')){ generatedFiles.splice(i,1); updateMyFilesList(); } };
+      btns.appendChild(del);
+
+      card.appendChild(btns);
+      container.appendChild(card);
+    }
+  }
+
+  function downloadFile(o){
+    const url = URL.createObjectURL(o.file);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = o.name;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  async function jsonOrThrow(res){
+    const text=await res.text();
+    if(!res.ok){ throw new Error(text || `${res.status} ${res.statusText}`); }
+    try{ return JSON.parse(text); }catch(e){ throw new Error(`Expected JSON but got:\n${text.slice(0,400)}`); }
+  }
+
+  // expose hideProgressOverlay to allow cancel from outside if needed
+  window.hideProgressOverlay = hideProgressOverlay;
+
+  // initial render if any
+  updateMyFilesList();
+</script>
+</body>
+</html>

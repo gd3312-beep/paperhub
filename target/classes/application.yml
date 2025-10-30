@@ -1,0 +1,18 @@
+server:
+  port: 8080
+
+paperhub:
+  storage:
+    uploads-dir: uploads
+    outputs-dir: outputs
+
+gemini:
+  api-key: ${GEMINI_API_KEY:}
+  model: gemini-2.5-pro
+  endpoint: https://generativelanguage.googleapis.com/v1beta/models
+
+spring:
+  servlet:
+    multipart:
+      max-file-size: 50MB
+      max-request-size: 200MB

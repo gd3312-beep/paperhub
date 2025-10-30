@@ -1,0 +1,9 @@
+com/paperhub/service/AiService.class
+com/paperhub/service/PdfService.class
+com/paperhub/config/CorsConfig.class
+com/paperhub/PaperHubApplication.class
+com/paperhub/dto/ApiResponse.class
+com/paperhub/controller/DownloadController.class
+com/paperhub/service/FileStorageService.class
+com/paperhub/controller/PdfController.class
+com/paperhub/controller/AiController.class
