@@ -1,0 +1,15 @@
+.DS_Store
+target/
+uploads/
+outputs/
+*.log
+
+.env
+.env.*
+!.env.example
+
+.idea/
+.vscode/
+*.iml
+
+node_modules/
