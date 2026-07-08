@@ -1,6 +1,6 @@
 # PaperHUB
 
-PaperHUB is a small Spring Boot app for working with PDFs in the browser. It handles everyday PDF jobs like merging, compressing, and page-to-image export, then adds Gemini-powered study tools for summaries, quizzes, and mind maps.
+PaperHUB is a Spring Boot app for working with PDFs in the browser. It handles everyday PDF jobs like merging, compressing, and page-to-image export, then adds Gemini-powered study tools for summaries, quizzes, and mind maps.
 
 ## Features
 
